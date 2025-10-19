@@ -2,38 +2,50 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize the Supabase client
+// 1) Define the shape of a row in your `test` table
+type TestRow = {
+  id: number
+  name: string | null
+  created_at: string | null
+}
+
+// 2) Supabase client (keep your real URL & key)
 const supabase = createClient(
-  'https://lmbsmkvmluspqiynlkiy.supabase.co',  // Replace with your Supabase project URL
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYnNta3ZtbHVzcHFpeW5sa2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA5MDksImV4cCI6MjA3NjEzNjkwOX0.fOMtEug14wbs_VUFucThDwU4GssxPZgKoL070KYsdDE'                  // Replace with your public API key from Supabase
+  'https://lmbsmkvmluspqiynlkiy.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYnNta3ZtbHVzcHFpeW5sa2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA5MDksImV4cCI6MjA3NjEzNjkwOX0.fOMtEug14wbs_VUFucThDwU4GssxPZgKoL070KYsdDE'
 )
 
 export default function Home() {
-  const [testData, setTestData] = useState([])
-  const [loading, setLoading] = useState(true)
+  // 3) Explicitly type the state
+  const [testData, setTestData] = useState<TestRow[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    // Example: Fetch data from a test table
     const fetchData = async () => {
       const { data, error } = await supabase.from('test').select('*')
       if (error) {
         console.error('Error fetching data:', error)
+        setTestData([]) // keep state consistent
       } else {
-        setTestData(data)
+        setTestData((data ?? []) as TestRow[])
       }
       setLoading(false)
     }
-
     fetchData()
   }, [])
 
-  // Example: Insert data into Supabase when button is clicked
   const insertRecord = async () => {
     const { data, error } = await supabase
       .from('test')
-      .insert([{ name: 'Gerard Test', created_at: new Date() }])
-    if (error) console.error('Error inserting data:', error)
-    else alert('Record added successfully!')
+      .insert([{ name: 'Gerard Test' }])
+      .select('*') // return inserted rows
+
+    if (error) {
+      console.error('Error inserting data:', error)
+      return
+    }
+    setTestData(prev => [...prev, ...((data ?? []) as TestRow[])])
+    alert('Record added successfully!')
   }
 
   return (
@@ -45,9 +57,9 @@ export default function Home() {
         <p>Loading data...</p>
       ) : (
         <ul>
-          {testData.map((row) => (
+          {testData.map(row => (
             <li key={row.id}>
-              {row.id}: {row.name} ({new Date(row.created_at).toLocaleString()})
+              {row.id}: {row.name} ({row.created_at ? new Date(row.created_at).toLocaleString() : '—'})
             </li>
           ))}
         </ul>
