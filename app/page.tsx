@@ -1,53 +1,56 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+'use client'  //Tell Next.js this is a client component
+import { useEffect, useState } from 'react' //import React hooks so the app remembers and reacts to changes
+import { createClient } from '@supabase/supabase-js' //import Supabase client
 
-// 1) Define the shape of a row in your `test` table
+//defines what a row in the "test" table looks like
 type TestRow = {
   id: number
   name: string | null
   created_at: string | null
 }
 
-// 2) Supabase client (keep your real URL & key)
+//connection to my supabase project
 const supabase = createClient(
-  'https://lmbsmkvmluspqiynlkiy.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYnNta3ZtbHVzcHFpeW5sa2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA5MDksImV4cCI6MjA3NjEzNjkwOX0.fOMtEug14wbs_VUFucThDwU4GssxPZgKoL070KYsdDE'
+  'https://lmbsmkvmluspqiynlkiy.supabase.co', //url
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYnNta3ZtbHVzcHFpeW5sa2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA5MDksImV4cCI6MjA3NjEzNjkwOX0.fOMtEug14wbs_VUFucThDwU4GssxPZgKoL070KYsdDE' //anon key
 )
 
 export default function Home() {
-  // 3) Explicitly type the state
-  const [testData, setTestData] = useState<TestRow[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  //state variables
+  const [testData, setTestData] = useState<TestRow[]>([]) //stores supabase rows
+  const [loading, setLoading] = useState<boolean>(true) //loading status
 
+  //fetches all data from supabase when loaded
   useEffect(() => {
     const fetchData = async () => {
       const { data, error } = await supabase.from('test').select('*')
       if (error) {
         console.error('Error fetching data:', error)
-        setTestData([]) // keep state consistent
+        setTestData([]) //if theres an error, set to empty 
       } else {
-        setTestData((data ?? []) as TestRow[])
+        setTestData((data ?? []) as TestRow[]) //store data if no error
       }
       setLoading(false)
     }
     fetchData()
   }, [])
 
+  //inserts a new record into supabase
   const insertRecord = async () => {
     const { data, error } = await supabase
       .from('test')
-      .insert([{ name: 'Gerard Test' }])
-      .select('*') // return inserted rows
+      .insert([{ name: 'Gerard Test' }]) //data to insert
+      .select('*') //return the inserted data
 
     if (error) {
       console.error('Error inserting data:', error)
       return
     }
+    //adds the new record and confirms success
     setTestData(prev => [...prev, ...((data ?? []) as TestRow[])])
     alert('Record added successfully!')
   }
-
+//renders page
   return (
     <main style={{ padding: '2rem', fontFamily: 'Arial' }}>
       <h1>Supabase Connectivity Test</h1>
