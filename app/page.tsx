@@ -1,3 +1,5 @@
+// Code adapted from Supabase (2025) Getting Started with Supabase JavaScript Client
+
 'use client'  //Tell Next.js this is a client component
 import { useEffect, useState } from 'react' //import React hooks so the app remembers and reacts to changes
 import { createClient } from '@supabase/supabase-js' //import Supabase client
