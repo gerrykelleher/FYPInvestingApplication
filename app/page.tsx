@@ -1,74 +1,72 @@
-// Code adapted from Supabase (2025) Getting Started with Supabase JavaScript Client
+//Code adapted from W3Schools (2025) React Router and Styling Examples
+// https://www.w3schools.com/react/react_router.asp
+// https://www.w3schools.com/react/react_styling.asp
 
-'use client'  //Tell Next.js this is a client component
-import { useEffect, useState } from 'react' //import React hooks so the app remembers and reacts to changes
-import { createClient } from '@supabase/supabase-js' //import Supabase client
-
-//defines what a row in the "test" table looks like
-type TestRow = {
-  id: number
-  name: string | null
-  created_at: string | null
-}
-
-//connection to my supabase project
-const supabase = createClient(
-  'https://lmbsmkvmluspqiynlkiy.supabase.co', //url
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtYnNta3ZtbHVzcHFpeW5sa2l5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1NjA5MDksImV4cCI6MjA3NjEzNjkwOX0.fOMtEug14wbs_VUFucThDwU4GssxPZgKoL070KYsdDE' //anon key
-)
+"use client";
+import Link from "next/link";
+import type { CSSProperties } from "react";
 
 export default function Home() {
-  //state variables
-  const [testData, setTestData] = useState<TestRow[]>([]) //stores supabase rows
-  const [loading, setLoading] = useState<boolean>(true) //loading status
+  // Type the style objects so TS accepts CSS values like "center" for textAlign
+  const pageStyle: CSSProperties = {
+    textAlign: "center",
+    fontFamily: "Arial, sans-serif",
+    padding: "50px",
+  };
 
-  //fetches all data from supabase when loaded
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data, error } = await supabase.from('test').select('*')
-      if (error) {
-        console.error('Error fetching data:', error)
-        setTestData([]) //if theres an error, set to empty 
-      } else {
-        setTestData((data ?? []) as TestRow[]) //store data if no error
-      }
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
+  const buttonStyle: CSSProperties = {
+    display: "inline-block",
+    margin: "10px",
+    padding: "12px 24px",
+    borderRadius: "6px",
+    backgroundColor: "#0070f3",
+    color: "white",
+    textDecoration: "none",
+    fontWeight: "bold",
+  };
 
-  //inserts a new record into supabase
-  const insertRecord = async () => {
-    const { data, error } = await supabase
-      .from('test')
-      .insert([{ name: 'Gerard Test' }]) //data to insert
-      .select('*') //return the inserted data
-
-    if (error) {
-      console.error('Error inserting data:', error)
-      return
-    }
-    //adds the new record and confirms success
-    setTestData(prev => [...prev, ...((data ?? []) as TestRow[])])
-    alert('Record added successfully!')
-  }
-//renders page
   return (
-    <main style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h1>Supabase Connectivity Test</h1>
-      <button onClick={insertRecord}>Insert Test Record</button>
+    <div style={pageStyle}>
+      <h1>Financial Literacy Classroom Tools</h1>
+      <p>
+        Choose a simulator below to explore how borrowing, repayments, and
+        interest work.
+      </p>
 
-      {loading ? (
-        <p>Loading data...</p>
-      ) : (
-        <ul>
-          {testData.map(row => (
-            <li key={row.id}>
-              {row.id}: {row.name} ({row.created_at ? new Date(row.created_at).toLocaleString() : '—'})
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  )
+      {/*Navigation Links*/}
+      <div>
+        <Link href="/simulate/car" style={buttonStyle}>
+          🚗 Car Finance Simulator
+        </Link>
+
+        <Link href="/simulate/mortgage" style={buttonStyle}>
+          🏠 Mortgage Simulator
+        </Link>
+      </div>
+
+      {/* Optional note or dev link */}
+      <div style={{ marginTop: "40px", fontSize: "14px", color: "#666" }}>
+        <p>
+          Educational simulator built for financial literacy classes in Ireland.
+        </p>
+        <p>
+          <Link
+            href="/supabase-test"
+            style={{ color: "#0070f3", textDecoration: "underline" }}
+          >
+            Developer Test Page
+          </Link>
+        </p>
+      </div>
+
+      {/*Hover effect*/}
+      <style jsx>{`
+        a:hover {
+          background-color: #0056c2;
+          color: white;
+          transition: 0.15s ease-in-out;
+        }
+      `}</style>
+    </div>
+  );
 }
