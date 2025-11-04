@@ -7,7 +7,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 export default function Home() {
-  // Type the style objects so TS accepts CSS values like "center" for textAlign
+
   const pageStyle: CSSProperties = {
     textAlign: "center",
     fontFamily: "Arial, sans-serif",
@@ -44,7 +44,7 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Optional note or dev link */}
+      
       <div style={{ marginTop: "40px", fontSize: "14px", color: "#666" }}>
         <p>
           Educational simulator built for financial literacy classes in Ireland.
@@ -54,7 +54,7 @@ export default function Home() {
             href="/supabase-test"
             style={{ color: "#0070f3", textDecoration: "underline" }}
           >
-            Developer Test Page
+            Test Supabase Connectivity
           </Link>
         </p>
       </div>
