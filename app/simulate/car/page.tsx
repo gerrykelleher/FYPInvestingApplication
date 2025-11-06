@@ -1,8 +1,9 @@
 //tell nextjs this is a client component
 "use client";
 import { useMemo, useState } from "react";
+import Navbar from "../../components/navbar";
 
-// ---- Types
+//Types
 type FinanceType = "loan" | "pcp";
 
 type Inputs = {
@@ -32,7 +33,7 @@ function round2(x: number) {
 }
 
 //PMT formula function generated with ChatGPT guidance
-//Follows the standard annuity equation for fixed-rate loans.
+//Follows the standard annuity equation for fixed rate loans.
 //Verified using the Corporate Finance Institute – "Loan Payment Formula" (2025).
 function pmtLoan(P: number, r: number, n: number) {
   if (r === 0) return P / n;
@@ -127,7 +128,7 @@ function calculate(inputs: Inputs): Result {
 
 //react component for the car finance simulator page
 export default function CarFinanceSimulatorPage() {
-  // Sensible Irish defaults for a classroom demo
+  //default values
   const [financeType, setFinanceType] = useState<FinanceType>("loan");
   const [cashPrice, setCashPrice] = useState(25000);
   const [deposit, setDeposit] = useState(5000);
@@ -136,6 +137,11 @@ export default function CarFinanceSimulatorPage() {
   const [termMonths, setTermMonths] = useState(60);
   const [balloon, setBalloon] = useState(10000); //used for PCP only
   const [error, setError] = useState<string | null>(null);
+
+  // keep a separate string for the term input to avoid the "stuck 1" issue
+  const [termStr, setTermStr] = useState("60");
+
+  //sync numeric state when termStr changes (handled in onChange/onBlur below)
 
   //useMemo recalculates result when inputs change, keeps UI responsive
   const result = useMemo(() => {
@@ -152,209 +158,261 @@ export default function CarFinanceSimulatorPage() {
 
   //UI structure for the simulator page
   //W3Schools ("React Forms") and React.dev documentation, with structure refined
-//used ChatGPT guidance
-  return (
-    <div className="container">
+//used ChatGPT as aid
+ return (
+  <>
+    <Navbar />  {/*Added navbar*/}
+    <div className="container" style={{ marginTop: "80px" }}> {/*Added margin so it doesn’t overlap */}
+
       <h1>Car Finance Simulator</h1>
+      {/* Instruction line for users */}
+      <p style={{ marginBottom: "20px", opacity: 0.8 }}>
+        Enter your car details below to simulate your loan repayments and costs.
+      </p>
       <p className="lead mt-4">
         Compare a standard <b>car loan</b> vs <b>PCP</b> (with balloon/GMFV).
       </p>
 
-      {/*Inputs*/}
-<div className="grid-2 mt-20">
-  <div className="grid-gap-10">
-    {/*Finance Type*/}
-    <label className="label">
-      <span className="tooltip">
-        Finance Type
-        <span className="tooltiptext">
-          Choose between a <b>standard car loan</b> or a <b>PCP (Personal Contract Plan)</b>. 
-          PCPs include a final payment known as the GMFV.
-        </span>
-      </span>
-      <select
-        className="select"
-        value={financeType}
-        onChange={(e) => setFinanceType(e.target.value as FinanceType)}
+      {/* ✅ Card-style wrapper for calculator */}
+      <div
+        style={{
+          backgroundColor: "#f9f9f9",
+          borderRadius: "10px",
+          padding: "30px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          marginTop: "30px",
+        }}
       >
-        <option value="loan">Loan (no balloon)</option>
-        <option value="pcp">PCP (with balloon/GMFV)</option>
-      </select>
-    </label>
+        {/*Inputs*/}
+        <div className="grid-2 mt-20">
+          <div className="grid-gap-10">
+            {/*Finance Type*/}
+            <label className="label">
+              <span className="tooltip">
+                Finance Type
+                <span className="tooltiptext">
+                  Choose between a <b>standard car loan</b> or a <b>PCP (Personal Contract Plan)</b>. 
+                  PCPs include a final payment known as the GMFV.
+                </span>
+              </span>
+              <select
+                className="select"
+                value={financeType}
+                onChange={(e) => setFinanceType(e.target.value as FinanceType)}
+              >
+                <option value="loan">Loan (no balloon)</option>
+                <option value="pcp">PCP (with balloon/GMFV)</option>
+              </select>
+            </label>
 
-    {/*Car Price Input*/}
-    <label className="label">
-      <span className="tooltip">
-        Cash Price (€)
-        <span className="tooltiptext">
-          The full on-the-road price of the vehicle including VAT.
-        </span>
-      </span>
-      <input
-        className="input"
-        type="number"
-        value={cashPrice.toString()}
-        onChange={(e) => setCashPrice(Number(e.target.value) || 0)}
-        min={0}
-      />
-    </label>
+            {/*Car Price Input*/}
+            <label className="label">
+              <span className="tooltip">
+                Cash Price (€)
+                <span className="tooltiptext">
+                  The full on-the-road price of the vehicle including VAT.
+                </span>
+              </span>
+             <input
+              className="input"
+              type="number"
+              value={cashPrice.toString()}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                setCashPrice(Math.min(Math.max(v, 0), 250000));
+              }}
+              min={0}
+              max={250000}
+            />
 
-    {/*Deposit Input*/}
-    <label className="label">
-      <span className="tooltip">
-        Deposit (€)
-        <span className="tooltiptext">
-          The upfront amount you pay before financing. A higher deposit reduces monthly payments.
-        </span>
-      </span>
-      <input
-        className="input"
-        type="number"
-        value={deposit.toString()}
-        onChange={(e) => setDeposit(Number(e.target.value) || 0)}
-        min={0}
-      />
-    </label>
+            </label>
 
-    {/*Fees Input*/}
-    <label className="label">
-      <span className="tooltip">
-        Flat Fees (€)
-        <span className="tooltiptext">
-          Any one-time admin or documentation charges added to the finance agreement.
-        </span>
-      </span>
-      <input
-        className="input"
-        type="number"
-        value={fees.toString()}
-        onChange={(e) => setFees(Number(e.target.value) || 0)}
-        min={0}
-      />
-    </label>
-  </div>
+            {/*Deposit Input*/}
+            <label className="label">
+              <span className="tooltip">
+                Deposit (€)
+                <span className="tooltiptext">
+                  The upfront amount you pay before financing. A higher deposit reduces monthly payments.
+                </span>
+              </span>
+              <input
+              className="input"
+              type="number"
+              value={deposit.toString()}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                setDeposit(Math.min(Math.max(v, 0), cashPrice));
+              }}
+              min={0}
+              max={cashPrice}
+            />
+            </label>
 
-  {/*Right column inputs*/}
-  <div className="grid-gap-10">
-    {/*APR Input*/}
-    <label className="label">
-      <span className="tooltip">
-        APR (%)
-        <span className="tooltiptext">
-          The <b>Annual Percentage Rate (APR)</b> is the yearly cost of borrowing, 
-          including interest and any fees.
-        </span>
-      </span>
-      <input
-        className="input"
-        type="number"
-        step="0.01"
-        value={aprPct.toString()}
-        onChange={(e) => setAprPct(Number(e.target.value) || 0)}
-        min={0}
-      />
-    </label>
-
-    {/*Term Input*/}
-    <label className="label">
-      <span className="tooltip">
-        Term (months)
-        <span className="tooltiptext">
-          The total number of months you will make repayments over.
-        </span>
-      </span>
-      <input
-        className="input"
-        type="number"
-        value={termMonths.toString()}
-        onChange={(e) => setTermMonths(Number(e.target.value) || 1)}
-        min={1}
-      />
-    </label>
-
-    {/*Balloon Input for PCP only*/}
-    {financeType === "pcp" && (
-      <label className="label">
-        <span className="tooltip">
-          Balloon / GMFV at End (€)
-          <span className="tooltiptext">
-            The <b>Guaranteed Minimum Future Value (GMFV)</b> is a final lump-sum due at the end 
-            of a PCP agreement if you wish to keep the car.
-          </span>
-        </span>
-        <input
-          className="input"
-          type="number"
-          value={balloon.toString()}
-          onChange={(e) => setBalloon(Number(e.target.value) || 0)}
-          min={0}
-          max={cashPrice}
-        />
-      </label>
-    )}
-
-    {/*Amount financed explanation*/}
-    <div className="small mt-8">
-      <b>Amount financed</b> = Cash Price − Deposit + Fees
-    </div>
-  </div>
-</div>
-
-
-      {/*Errors*/}
-      {error && (
-        <p className="text-danger mt-12">
-          {error}
-        </p>
-      )}
-
-      {/*Results*/}
-      {result && !error && (
-        <div className="mt-24">
-          <h2>Results</h2>
-          <div className="grid-4 mt-8">
-            <Stat label="Amount financed" value={`€${result.amountFinanced.toFixed(2)}`} />
-            <Stat label="Monthly repayment" value={`€${result.monthlyPayment.toFixed(2)}`} />
-            <Stat label="Total amount repayable" value={`€${result.totalAmountRepayable.toFixed(2)}`} />
-            <Stat label="Total cost of credit" value={`€${result.totalCostOfCredit.toFixed(2)}`} />
+            {/*Fees Input*/}
+            <label className="label">
+              <span className="tooltip">
+                Flat Fees (€)
+                <span className="tooltiptext">
+                  Any one-time admin or documentation charges added to the finance agreement.
+                </span>
+              </span>
+                          <input
+              className="input"
+              type="number"
+              value={fees.toString()}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                setFees(Math.min(Math.max(v, 0), 5000));
+              }}
+              min={0}
+              max={5000}
+            />
+            </label>
           </div>
 
-          {/*Repayments table*/}
-          <h3 className="mt-24">Repayments (first 12 months)</h3>
-          <table className="table mt-8">
-            <thead>
-              <tr>
-                <Th>#</Th>
-                <Th>Payment</Th>
-                <Th>Interest</Th>
-                <Th>Principal</Th>
-                <Th>Balance</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.rows.map((r) => (
-                <tr key={r.period}>
-                  <Td>{r.period}</Td>
-                  <Td>€{r.payment.toFixed(2)}</Td>
-                  <Td>€{r.interest.toFixed(2)}</Td>
-                  <Td>€{r.principal.toFixed(2)}</Td>
-                  <Td>€{r.balance.toFixed(2)}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/*Right column inputs*/}
+          <div className="grid-gap-10">
+            {/*APR Input*/}
+            <label className="label">
+              <span className="tooltip">
+                APR (%)
+                <span className="tooltiptext">
+                  The <b>Annual Percentage Rate (APR)</b> is the yearly cost of borrowing, 
+                  including interest and any fees.
+                </span>
+              </span>
+                        <input
+              className="input"
+              type="number"
+              step="0.01"
+              value={aprPct.toString()}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                setAprPct(Math.min(Math.max(v, 0), 50));
+              }}
+              min={0}
+              max={50}
+            />
+            </label>
 
-          {/*PCP note*/}
-          {financeType === "pcp" && (
-            <p className="small mt-12">
-              PCP leaves a final <b>balloon/GMFV</b> due at the end of the term. The balance above
-              will reduce but not reach €0 within the term.
-            </p>
-          )}
+            {/*Term Input*/}
+            <label className="label">
+              <span className="tooltip">
+                Term (months)
+                <span className="tooltiptext">
+                  The total number of months you will make repayments over.
+                </span>
+              </span>
+              <input
+                className="input"
+                type="text"            // text to avoid browser coercion; smoother typing
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={termStr}
+                onChange={(e) => {
+                  const s = e.target.value;
+                  if (s === "") { setTermStr(""); return; } // allow empty while typing
+                  const num = Number(s);
+                  if (Number.isNaN(num)) return; // ignore non-numeric
+                  if (num > 96) { setTermStr("96"); setTermMonths(96); return; } // cap high
+                  setTermStr(s);
+                  if (num >= 1) setTermMonths(num); // only update numeric state when valid
+                }}
+                onBlur={() => {
+                  // snap to [1,96] on blur
+                  const num = Number(termStr);
+                  const clamped = Math.min(Math.max(num || 1, 1), 96);
+                  setTermStr(String(clamped));
+                  setTermMonths(clamped);
+                }}
+                placeholder="e.g. 60"
+              />
+            </label>
+
+            {/*Balloon Input for PCP only*/}
+            {financeType === "pcp" && (
+              <label className="label">
+                <span className="tooltip">
+                  Balloon / GMFV at End (€)
+                  <span className="tooltiptext">
+                    The <b>Guaranteed Minimum Future Value (GMFV)</b> is a final lump-sum due at the end 
+                    of a PCP agreement if you wish to keep the car.
+                  </span>
+                </span>
+                <input
+                  className="input"
+                  type="number"
+                  value={balloon.toString()}
+                  onChange={(e) => setBalloon(Number(e.target.value) || 0)}
+                  min={0}
+                  max={cashPrice}
+                />
+              </label>
+            )}
+
+            {/*Amount financed explanation*/}
+            <div className="small mt-8">
+              <b>Amount financed</b> = Cash Price − Deposit + Fees
+            </div>
+          </div>
         </div>
-      )}
+
+        {/*Errors*/}
+        {error && (
+          <p className="text-danger mt-12">
+            {error}
+          </p>
+        )}
+
+        {/*Results*/}
+        {result && !error && (
+          <div className="mt-24">
+            <h2>Results</h2>
+            <div className="grid-4 mt-8">
+              <Stat label="Amount financed" value={`€${result.amountFinanced.toFixed(2)}`} />
+              <Stat label="Monthly repayment" value={`€${result.monthlyPayment.toFixed(2)}`} />
+              <Stat label="Total amount repayable" value={`€${result.totalAmountRepayable.toFixed(2)}`} />
+              <Stat label="Total cost of credit" value={`€${result.totalCostOfCredit.toFixed(2)}`} />
+            </div>
+
+            {/*Repayments table*/}
+            <h3 className="mt-24">Repayments (first 12 months)</h3>
+            <table className="table mt-8">
+              <thead>
+                <tr>
+                  <Th>#</Th>
+                  <Th>Payment</Th>
+                  <Th>Interest</Th>
+                  <Th>Principal</Th>
+                  <Th>Balance</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.rows.map((r) => (
+                  <tr key={r.period}>
+                    <Td>{r.period}</Td>
+                    <Td>€{r.payment.toFixed(2)}</Td>
+                    <Td>€{r.interest.toFixed(2)}</Td>
+                    <Td>€{r.principal.toFixed(2)}</Td>
+                    <Td>€{r.balance.toFixed(2)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/*PCP note*/}
+            {financeType === "pcp" && (
+              <p className="small mt-12">
+                PCP leaves a final <b>balloon/GMFV</b> due at the end of the term. The balance above
+                will reduce but not reach €0 within the term.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-  );
+  </>
+);
 }
 
 //neat table for displaying a label and value

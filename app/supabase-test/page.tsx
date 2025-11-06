@@ -4,6 +4,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+console.log('SB URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('SB KEY present:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+
 // Defines what a row in the "test" table looks like
 type TestRow = {
   id: number;
@@ -24,18 +28,24 @@ export default function SupabaseTestPage() {
 
   // Fetch all data from supabase when component loads
   useEffect(() => {
-    const fetchData = async () => {
-      const { data, error } = await supabase.from("test").select("*");
-      if (error) {
-        console.error("Error fetching data:", error);
-        setTestData([]);
-      } else {
-        setTestData((data ?? []) as TestRow[]);
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    const { data, error } = await supabase.from('public.test').select('*');
+
+    if (error) {
+      console.error('Fetch error details:', {
+        message: (error as any).message,
+        details: (error as any).details,
+        hint:    (error as any).hint,
+        code:    (error as any).code,
+      });
+      setTestData([]);
+      return;
+    }
+
+    setTestData((data ?? []) as TestRow[]);
+  };
+  fetchData();
+}, []);
 
   // Insert a new record into supabase
   const insertRecord = async () => {
