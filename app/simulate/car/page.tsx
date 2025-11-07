@@ -1,4 +1,6 @@
 //tell nextjs this is a client component
+//React structure and hook usage (useState, useMemo) based on React.dev official documentation
+//https://react.dev/learn
 "use client";
 import { useMemo, useState } from "react";
 import Navbar from "../../components/navbar";
@@ -72,13 +74,7 @@ function buildAmortizationRows(P: number, r: number, n: number, PMT: number): Ro
   }
   return rows;
 }
-
-/**
- * Core calculator used by the page.
- * - Uses APR% as nominal annual rate -> monthly rate r
- * - amountFinanced = cashPrice - deposit + fees
- * - For PCP, leaves "balloon" due at the end.
- */
+//Main calculation function
 function calculate(inputs: Inputs): Result {
     //inputs broken into seperate variables
   const { cashPrice, deposit, fees, aprPct, termMonths, financeType, balloon } = inputs;
@@ -138,10 +134,8 @@ export default function CarFinanceSimulatorPage() {
   const [balloon, setBalloon] = useState(10000); //used for PCP only
   const [error, setError] = useState<string | null>(null);
 
-  // keep a separate string for the term input to avoid the "stuck 1" issue
+  //keep a separate string for the term input to avoid getting stuck at 1
   const [termStr, setTermStr] = useState("60");
-
-  //sync numeric state when termStr changes (handled in onChange/onBlur below)
 
   //useMemo recalculates result when inputs change, keeps UI responsive
   const result = useMemo(() => {
@@ -173,7 +167,7 @@ export default function CarFinanceSimulatorPage() {
         Compare a standard <b>car loan</b> vs <b>PCP</b> (with balloon/GMFV).
       </p>
 
-      {/* ✅ Card-style wrapper for calculator */}
+      {/*Card-style wrapper for calculator */}
       <div
         style={{
           backgroundColor: "#f9f9f9",
@@ -305,21 +299,21 @@ export default function CarFinanceSimulatorPage() {
               </span>
               <input
                 className="input"
-                type="text"            // text to avoid browser coercion; smoother typing
+                type="text"            
                 inputMode="numeric"
                 pattern="[0-9]*"
                 value={termStr}
                 onChange={(e) => {
                   const s = e.target.value;
-                  if (s === "") { setTermStr(""); return; } // allow empty while typing
+                  if (s === "") { setTermStr(""); return; } //allow empty while typing
                   const num = Number(s);
-                  if (Number.isNaN(num)) return; // ignore non-numeric
-                  if (num > 96) { setTermStr("96"); setTermMonths(96); return; } // cap high
+                  if (Number.isNaN(num)) return; //ignore non-numeric inputs
+                  if (num > 96) { setTermStr("96"); setTermMonths(96); return; } //cap high
                   setTermStr(s);
-                  if (num >= 1) setTermMonths(num); // only update numeric state when valid
+                  if (num >= 1) setTermMonths(num); //only update numeric state when valid
                 }}
                 onBlur={() => {
-                  // snap to [1,96] on blur
+                  //on leaving field, clamp to valid range
                   const num = Number(termStr);
                   const clamped = Math.min(Math.max(num || 1, 1), 96);
                   setTermStr(String(clamped));
@@ -437,3 +431,23 @@ function Th({ children }: { children: React.ReactNode }) {
 function Td({ children }: { children: React.ReactNode }) {
   return <td className="td">{children}</td>;
 }
+
+
+//---Code References---
+//PMT (annuity) formula and approach adapted from: Corporate Finance Institute (CFI), "Loan Payment Formula" (accessed Nov 2025).
+//used ChatGPT (OpenAI, 2025) to help me understand the structure of the PMT formula and to assist in converting it into a working TypeScript function.
+//Validations and rounding logic was written by me and all tests were done by me.
+//https://corporatefinanceinstitute.com/resources/wealth-management/annuity/
+
+//React structure and hook usage (useState, useMemo) based on React.dev official documentation
+//https://react.dev/learn
+
+//Input handling and form structure adapted from W3Schools "React Forms" (accessed Nov 2025):
+//https://www.w3schools.com/react/react_forms.asp
+
+//Tooltips: structure and CSS adapted from W3Schools "CSS Tooltip" examples (accessed Nov 2025), then customised to suit this project
+//https://www.w3schools.com/css/css_tooltip.asp
+
+//Navbar style adapted from W3Schools "CSS Horizontal Navigation Bar"(accessed Nov 2025), then customised to suit this project.
+//https://www.w3schools.com/Css/css_navbar_horizontal.asp
+//https://www.w3schools.com/react/react_router.asp
