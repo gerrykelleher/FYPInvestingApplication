@@ -341,28 +341,22 @@ function LoanScenarioView({
         {/* Buttons styled as a vertical choice list – pattern adapted from W3Schools button groups */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {scenario.choices.map((choice) => (
-            <button
-              key={choice.id}
-              className="btn btn-primary"
-              style={{
-                textAlign: "left",
-                whiteSpace: "normal",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "none",
-                cursor: "pointer",
-                transition: "transform 0.05s ease, box-shadow 0.1s ease",
-              }}
-              onClick={() => onChoose(choice)}
-              onMouseDown={(e) =>
-                ((e.currentTarget.style.transform = "scale(0.99)"))
-              }
-              onMouseUp={(e) =>
-                ((e.currentTarget.style.transform = "scale(1)"))
-              }
-            >
-              {choice.label}
-            </button>
+                  <button
+        key={choice.id}
+        className="btn interactive-choice"
+        onClick={(e) => {
+          // ripple effect
+          const ripple = document.createElement("span");
+          ripple.className = "ripple";
+          e.currentTarget.appendChild(ripple);
+          setTimeout(() => ripple.remove(), 500);
+
+          onChoose(choice);
+        }}
+      >
+        {choice.label}
+      </button>
+
           ))}
         </div>
       </div>
@@ -936,3 +930,9 @@ function Td({ children }: { children: React.ReactNode }) {
 //adapted from the pattern in GeeksforGeeks "Create a Text-based Adventure Game using React":
 //Used ChatGPT as aid to adapt the structure to my loan simulation context.
 //https://www.geeksforgeeks.org/reactjs/create-a-text-based-adventure-game-using-react/
+
+//Card layout for scenario view adapted from W3Schools "How to - CSS Cards" (accessed Nov 2025):
+//https://www.w3schools.com/howto/howto_css_cards.asp
+
+//Progress bar style adapted from W3Schools "How To - CSS Progress Bars" (accessed Nov 2025):
+//https://www.w3schools.com/howto/howto_css_progressbar.asp
