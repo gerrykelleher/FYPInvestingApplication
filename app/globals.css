@@ -88,6 +88,7 @@ input[type="number"] {
   opacity: 1;
 }
 
+/*Button styles - adapted from W3Schools*/
 .interactive-choice {
   position: relative;
   overflow: hidden;

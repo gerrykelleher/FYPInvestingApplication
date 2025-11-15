@@ -104,9 +104,10 @@ function buildAmortizationRows(P: number, r: number, n: number, PMT: number): Ro
   }
   return rows;
 }
+
 //Main calculation function
 function calculate(inputs: Inputs): Result {
-    //inputs broken into seperate variables
+  //inputs broken into seperate variables
   const { cashPrice, deposit, fees, aprPct, termMonths, financeType, balloon } = inputs;
 
   //input validation
@@ -119,7 +120,7 @@ function calculate(inputs: Inputs): Result {
     throw new Error("Balloon/GMFV should be less than the cash price"); 
 
   //1. Calculate amount financed
-        //cashPrice - deposit + fees
+  //cashPrice - deposit + fees
   const amountFinanced = Math.max(0, cashPrice - deposit + fees);
   //2. Convert APR% to monthly rate
   const r = aprPct / 100 / 12;
@@ -129,13 +130,14 @@ function calculate(inputs: Inputs): Result {
     financeType === "loan"
       ? pmtLoan(amountFinanced, r, termMonths)
       : pmtWithBalloon(amountFinanced, balloon, r, termMonths);
-      //4. Work out totals
+
+  //4. Work out totals
   const totalMonthlyPaid = PMT * termMonths;
   //totalAmountRepayable = deposit + fees + totalMonthlyPaid (+ balloon if PCP)
   const totalAmountRepayable =
     round2(deposit + fees + totalMonthlyPaid + (financeType === "pcp" ? balloon : 0));
     
-    //totalCostOfCredit = totalAmountRepayable - cashPrice
+  //totalCostOfCredit = totalAmountRepayable - cashPrice
   const totalCostOfCredit = round2(totalAmountRepayable - cashPrice);
 
   //5. Repayment schedule rows (first 12 months)
@@ -301,8 +303,6 @@ const loanScenarios: ScenarioNode[] = [
   },
 ];
 
-
-
 //Child component: responsible only for rendering the current scenario and choices.
 //Pattern inspired by "Story" component in GeeksforGeeks text adventure.
 //Layout and card styling adapted from W3Schools "How to - cards"
@@ -341,28 +341,28 @@ function LoanScenarioView({
         {/* Buttons styled as a vertical choice list – pattern adapted from W3Schools button groups */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {scenario.choices.map((choice) => (
-                  <button
-        key={choice.id}
-        className="btn interactive-choice"
-        onClick={(e) => {
-          // ripple effect
-          const ripple = document.createElement("span");
-          ripple.className = "ripple";
-          e.currentTarget.appendChild(ripple);
-          setTimeout(() => ripple.remove(), 500);
+            <button
+              key={choice.id}
+              className="btn interactive-choice"
+              onClick={(e) => {
+                //ripple effect
+                const ripple = document.createElement("span");
+                ripple.className = "ripple";
+                e.currentTarget.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 500);
 
-          onChoose(choice);
-        }}
-      >
-        {choice.label}
-      </button>
-
+                onChoose(choice);
+              }}
+            >
+              {choice.label}
+            </button>
           ))}
         </div>
       </div>
     </div>
   );
 }
+
 //Parent component: holds the current LoanState & scenario id.
 //Pattern inspired by "Game" component in GeeksforGeeks text adventure.
 //Layout and progress bar adapted from W3Schools "How To - Progress Bars"
@@ -376,6 +376,7 @@ function LoanSimulation({
   const [loan, setLoan] = useState<LoanState>(initialLoan);
   const [scenarioId, setScenarioId] = useState<number>(0);
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [previousLoan, setPreviousLoan] = useState<LoanState | null>(null);
 
   const scenario = loanScenarios.find((s) => s.id === scenarioId);
   const totalScenarios = loanScenarios.length;
@@ -387,6 +388,9 @@ function LoanSimulation({
     totalScenarios > 0 ? (currentIndex / totalScenarios) * 100 : 0;
 
   function handleChoice(choice: ScenarioChoice) {
+    // store current loan for before/after comparison
+    setPreviousLoan(loan);
+
     const updatedLoan = choice.apply(loan);
     setLoan(updatedLoan);
     setExplanation(choice.explanation);
@@ -403,6 +407,48 @@ function LoanSimulation({
     setLoan(initialLoan);
     setScenarioId(0);
     setExplanation(null);
+    setPreviousLoan(null);
+  }
+
+  // helper to render change arrows/colour
+  function renderChange(before: number, after: number, isRate = false) {
+    if (after > before) {
+      return (
+        <span style={{ color: "#b91c1c", fontWeight: 500 }}>
+          {isRate ? after.toFixed(2) + "%" : "€" + after.toFixed(2)} ▲
+        </span>
+      );
+    }
+    if (after < before) {
+      return (
+        <span style={{ color: "#15803d", fontWeight: 500 }}>
+          {isRate ? after.toFixed(2) + "%" : "€" + after.toFixed(2)} ▼
+        </span>
+      );
+    }
+    return (
+      <span style={{ opacity: 0.8 }}>
+        {isRate ? after.toFixed(2) + "%" : "€" + after.toFixed(2)}
+      </span>
+    );
+  }
+
+  function renderMonthsChange(before: number, after: number) {
+    if (after > before) {
+      return (
+        <span style={{ color: "#b91c1c", fontWeight: 500 }}>
+          {after} months ▲
+        </span>
+      );
+    }
+    if (after < before) {
+      return (
+        <span style={{ color: "#15803d", fontWeight: 500 }}>
+          {after} months ▼
+        </span>
+      );
+    }
+    return <span style={{ opacity: 0.8 }}>{after} months</span>;
   }
 
   return (
@@ -490,6 +536,114 @@ function LoanSimulation({
             </p>
           )}
         </div>
+
+        {/* Before vs After comparison for the last decision */}
+        {previousLoan && (
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "14px",
+              padding: "18px 20px",
+              boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+              marginBottom: "16px",
+              maxWidth: "720px",
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <h5 style={{ marginBottom: "10px" }}>Impact of your last decision</h5>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "0.9rem",
+              }}
+            >
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      paddingBottom: "6px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Metric
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      paddingBottom: "6px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Before
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      paddingBottom: "6px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    After
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: "4px 0" }}>Monthly repayment</td>
+                  <td style={{ padding: "4px 0" }}>
+                    €{previousLoan.monthlyPayment.toFixed(2)}
+                  </td>
+                  <td style={{ padding: "4px 0" }}>
+                    {renderChange(
+                      previousLoan.monthlyPayment,
+                      loan.monthlyPayment
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 0" }}>Total interest</td>
+                  <td style={{ padding: "4px 0" }}>
+                    €{previousLoan.totalInterestOnFinance.toFixed(2)}
+                  </td>
+                  <td style={{ padding: "4px 0" }}>
+                    {renderChange(
+                      previousLoan.totalInterestOnFinance,
+                      loan.totalInterestOnFinance
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 0" }}>Term remaining</td>
+                  <td style={{ padding: "4px 0" }}>
+                    {previousLoan.termMonthsRemaining} months
+                  </td>
+                  <td style={{ padding: "4px 0" }}>
+                    {renderMonthsChange(
+                      previousLoan.termMonthsRemaining,
+                      loan.termMonthsRemaining
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 0" }}>Annual interest rate</td>
+                  <td style={{ padding: "4px 0" }}>
+                    {(previousLoan.annualRate * 100).toFixed(2)}%
+                  </td>
+                  <td style={{ padding: "4px 0" }}>
+                    {renderChange(
+                      previousLoan.annualRate * 100,
+                      loan.annualRate * 100,
+                      true
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Scenario or completion message */}
         {scenario ? (
@@ -856,7 +1010,7 @@ export default function CarFinanceSimulatorPage() {
                   </p>
                 )}
 
-                {/* Begin Simulator button */}
+                {/*Begin Simulator button*/}
                 <button className="btn btn-primary mt-24" onClick={handleBeginSimulator}>
                   Begin Simulator
                 </button>
@@ -869,7 +1023,7 @@ export default function CarFinanceSimulatorPage() {
         </div>
       )}
 
-      {/* SIMULATION MODE – uses the Game/Story-style structure inspired by GeeksforGeeks */}
+      {/*simulation – uses the Game/Story-style structure inspired by GeeksforGeeks*/}
       {mode === "simulate" && simLoan && (
         <LoanSimulation
           initialLoan={simLoan}
@@ -936,3 +1090,9 @@ function Td({ children }: { children: React.ReactNode }) {
 
 //Progress bar style adapted from W3Schools "How To - CSS Progress Bars" (accessed Nov 2025):
 //https://www.w3schools.com/howto/howto_css_progressbar.asp
+
+//Button styling and interactive effects (hover, active, ripple) adapted from W3Schools "How To - Animated Buttons",
+//"How To - Ripple Effect Button" and "How To - Button Groups" (accessed Nov 2025):
+//https://www.w3schools.com/howto/howto_css_animate_buttons.asp
+//https://www.w3schools.com/howto/howto_css_ripple_buttons.asp
+//https://www.w3schools.com/howto/howto_css_button_group.asp
