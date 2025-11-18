@@ -209,13 +209,12 @@ const loanScenarios: ScenarioNode[] = [
           const updated: LoanState = {
             ...loan,
             annualRate: loan.annualRate + 0.01,
-            //terms remaining
             currentMonth: loan.currentMonth + 12,
           };
           return recalcLoanFromState(updated);
         },
         explanation:
-          "You decided to keep the same term. Your monthly repayment goes up immediately, but you still finish the loan on time.",
+          "You kept the same term, but your monthly repayment increases immediately. This avoids extending the loan but costs more each month.",
         nextScenarioId: 1,
       },
       {
@@ -231,11 +230,12 @@ const loanScenarios: ScenarioNode[] = [
           return recalcLoanFromState(updated);
         },
         explanation:
-          "By extending the term you reduce your monthly repayment, but you pay interest for longer and the total cost of credit increases.",
+          "You reduced your monthly repayment by extending the term, but you'll pay interest for longer and increase the total cost.",
         nextScenarioId: 1,
       },
     ],
   },
+
   {
     id: 1,
     title: "Missed Payment",
@@ -248,17 +248,17 @@ const loanScenarios: ScenarioNode[] = [
         apply: (loan) => {
           const updated: LoanState = {
             ...loan,
-            principal: loan.principal + 50, //fee added on
+            principal: loan.principal + 50,
           };
           return recalcLoanFromState(updated);
         },
         explanation:
-          "You paid a fee and caught up quickly. Your principal and total interest are slightly higher, but the original schedule is mostly intact.",
+          "You pay a small fee and stay close to your original schedule, but the cost of the loan increases slightly.",
         nextScenarioId: 2,
       },
       {
         id: "add-payment-end",
-        label: "Add the missed payment to the end of the agreement (extend term by 1 month)",
+        label: "Add the missed payment to the end of the loan (extend by 1 month)",
         apply: (loan) => {
           const updated: LoanState = {
             ...loan,
@@ -267,37 +267,162 @@ const loanScenarios: ScenarioNode[] = [
           return recalcLoanFromState(updated);
         },
         explanation:
-          "You avoided a fee, but you added an extra month to the loan. This keeps payments manageable but increases the total interest paid.",
+          "You avoid the fee, but extending the loan increases the overall interest paid.",
         nextScenarioId: 2,
       },
     ],
   },
+
   {
     id: 2,
-    title: "Bonus Lump Sum",
+    title: "Unexpected Repair Bill",
     description:
-      "You receive a €2,000 bonus from work. You are considering using it to reduce your finance balance.",
+      "Your car needs an unexpected €1,200 repair. You don’t have the cash available. How do you handle it?",
     choices: [
       {
-        id: "pay-off-2000",
-        label: "Pay €2,000 off the finance balance now",
+        id: "repair-add-finance",
+        label: "Add the €1,200 repair cost to the finance",
         apply: (loan) => {
-          const newPrincipal = Math.max(loan.principal - 2000, 0);
           const updated: LoanState = {
             ...loan,
-            principal: newPrincipal,
+            principal: loan.principal + 1200,
           };
           return recalcLoanFromState(updated);
         },
         explanation:
-          "Using the bonus reduces your principal. This lowers the interest charged and could reduce either your monthly repayment or the effective time in debt.",
+          "You financed the repair. This spreads the cost but increases your total interest paid.",
+        nextScenarioId: 3,
       },
       {
-        id: "keep-cash",
-        label: "Keep the bonus in savings for emergencies",
+        id: "repair-pay-cash",
+        label: "Pay the repair using savings",
         apply: (loan) => loan,
         explanation:
-          "You chose not to change the loan. Your repayments and interest stay the same, but you have a cash buffer to cover future shocks.",
+          "You used savings to cover the repair. No change to the loan, but your emergency fund is reduced.",
+        nextScenarioId: 3,
+      },
+    ],
+  },
+
+  {
+    id: 3,
+    title: "Insurance & Running Costs Increase",
+    description:
+      "Insurance prices and fuel costs have increased. Your monthly car-related expenses rise by €45. You need more room in your budget.",
+    choices: [
+      {
+        id: "extend-term-running-costs",
+        label: "Extend the finance term by 12 months to lower monthly repayments",
+        apply: (loan) => {
+          const updated: LoanState = {
+            ...loan,
+            termMonthsRemaining: loan.termMonthsRemaining + 12,
+          };
+          return recalcLoanFromState(updated);
+        },
+        explanation:
+          "You reduced monthly repayments to help cover rising costs, but extending the term increases the total interest paid.",
+        nextScenarioId: 4,
+      },
+      {
+        id: "keep-term-running-costs",
+        label: "Keep the same loan term and adjust your budget elsewhere",
+        apply: (loan) => loan,
+        explanation:
+          "You chose not to adjust the loan. Your repayments remain the same, but your budget becomes tighter.",
+        nextScenarioId: 4,
+      },
+    ],
+  },
+
+  {
+    id: 4,
+    title: "Bonus Lump Sum",
+    description:
+      "You receive a €2,000 bonus from work. You’re considering using it to reduce your finance balance.",
+    choices: [
+      {
+        id: "bonus-repay-2000",
+        label: "Pay €2,000 off the finance balance",
+        apply: (loan) => {
+          const updated: LoanState = {
+            ...loan,
+            principal: Math.max(loan.principal - 2000, 0),
+          };
+          return recalcLoanFromState(updated);
+        },
+        explanation:
+          "Paying down your principal early saves interest and may reduce the term or monthly repayments.",
+        nextScenarioId: 5,
+      },
+      {
+        id: "bonus-keep-cash",
+        label: "Keep the bonus in savings",
+        apply: (loan) => loan,
+        explanation:
+          "The loan stays the same, but keeping savings gives you a larger emergency fund.",
+        nextScenarioId: 5,
+      },
+    ],
+  },
+
+  {
+    id: 5,
+    title: "Early Settlement Offer",
+    description:
+      "Your lender offers a discounted settlement figure if you clear the finance now. You could use savings or borrow from family.",
+    choices: [
+      {
+        id: "settle-now",
+        label: "Use savings to settle the loan now",
+        apply: (loan) => ({
+          ...loan,
+          principal: 0,
+          balloon: 0,
+          termMonthsRemaining: 0,
+          monthlyPayment: 0,
+          totalInterestOnFinance: 0,
+        }),
+        explanation:
+          "You cleared the loan and saved interest, but used a large amount of savings.",
+        nextScenarioId: 6,
+      },
+      {
+        id: "continue-loan",
+        label: "Continue with the current loan",
+        apply: (loan) => loan,
+        explanation:
+          "You kept your savings for flexibility but will pay more interest over time.",
+        nextScenarioId: 6,
+      },
+    ],
+  },
+
+  {
+    id: 6,
+    title: "Negative Equity Warning",
+    description:
+      "Car values have fallen. You may soon owe more than the car is worth. What do you want to do?",
+    choices: [
+      {
+        id: "reduce-term",
+        label: "Reduce the term by 6 months to lower negative equity risk",
+        apply: (loan) => {
+          const updated: LoanState = {
+            ...loan,
+            termMonthsRemaining: Math.max(loan.termMonthsRemaining - 6, 1),
+          };
+          return recalcLoanFromState(updated);
+        },
+        explanation:
+          "You will clear the loan faster and reduce the time spent in negative equity, but monthly repayments increase.",
+      },
+      {
+        id: "keep-term",
+        label: "Keep the same repayment schedule",
+        apply: (loan) => loan,
+        explanation:
+          "Your monthly payments stay affordable, but you may remain in negative equity for longer.",
       },
     ],
   },
@@ -324,6 +449,7 @@ function LoanScenarioView({
         backgroundColor: "#ffffff",
       }}
     >
+      
       <div className="card-body">
         <h2
           className="card-title"
@@ -363,6 +489,146 @@ function LoanScenarioView({
   );
 }
 
+//Final summary card adapted from W3Schools "How To - CSS Modals"
+//and "How To - CSS Cards"
+function FinalSummary({
+  finalLoan,
+  decisions,
+  onClose,
+}: {
+  finalLoan: LoanState;
+  decisions: string[];
+  onClose: () => void;
+}) {
+  const summaryCardStyle: React.CSSProperties = {
+    backgroundColor: "#f9fafb",
+    borderRadius: "10px",
+    padding: "14px 16px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  };
+
+  const valueStyle: React.CSSProperties = {
+    fontSize: "1.25rem",
+    fontWeight: "bold",
+    color: "#111827",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: "16px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "800px",
+          width: "100%",
+          background: "#ffffff",
+          borderRadius: "16px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+          padding: "32px 40px",
+          fontFamily: "Arial, sans-serif",
+          animation: "fadeIn 0.25s ease",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            borderBottom: "1px solid #e5e7eb",
+            paddingBottom: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: "1.8rem" }}>Simulation Summary</h2>
+          <p style={{ opacity: 0.8, marginTop: "6px" }}>
+            Here's a clear breakdown of how your decisions impacted your finance
+            agreement.
+          </p>
+        </div>
+
+        {/* Summary stats - card row */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "16px",
+            marginBottom: "22px",
+          }}
+        >
+          <div style={summaryCardStyle}>
+            <b>Final monthly payment</b>
+            <span style={valueStyle}>
+              €{finalLoan.monthlyPayment.toFixed(2)}
+            </span>
+          </div>
+
+          <div style={summaryCardStyle}>
+            <b>Total interest remaining</b>
+            <span style={valueStyle}>
+              €{finalLoan.totalInterestOnFinance.toFixed(2)}
+            </span>
+          </div>
+
+          <div style={summaryCardStyle}>
+            <b>Months remaining</b>
+            <span style={valueStyle}>{finalLoan.termMonthsRemaining}</span>
+          </div>
+
+          <div style={summaryCardStyle}>
+            <b>Annual interest rate</b>
+            <span style={valueStyle}>
+              {(finalLoan.annualRate * 100).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Decisions list */}
+        <h3 style={{ marginTop: "8px" }}>Decisions you made</h3>
+        <ul style={{ lineHeight: 1.6, marginBottom: "28px", paddingLeft: "20px" }}>
+          {decisions.map((label, index) => (
+            <li key={index} style={{ marginBottom: "4px" }}>
+              {label}
+            </li>
+          ))}
+        </ul>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            backgroundColor: "#3b82f6",
+            color: "white",
+            padding: "10px 22px",
+            borderRadius: "8px",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "1rem",
+            transition: "0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.85";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+        >
+          Close summary
+        </button>
+      </div>
+    </div>
+  );
+}
+
 //Parent component: holds the current LoanState & scenario id.
 //Pattern inspired by "Game" component in GeeksforGeeks text adventure.
 //Layout and progress bar adapted from W3Schools "How To - Progress Bars"
@@ -377,6 +643,8 @@ function LoanSimulation({
   const [scenarioId, setScenarioId] = useState<number>(0);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [previousLoan, setPreviousLoan] = useState<LoanState | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [decisionHistory, setDecisionHistory] = useState<string[]>([]);
 
   const scenario = loanScenarios.find((s) => s.id === scenarioId);
   const totalScenarios = loanScenarios.length;
@@ -388,8 +656,11 @@ function LoanSimulation({
     totalScenarios > 0 ? (currentIndex / totalScenarios) * 100 : 0;
 
   function handleChoice(choice: ScenarioChoice) {
-    // store current loan for before/after comparison
+    //stores current loan for before/after comparison
     setPreviousLoan(loan);
+
+    //record the label of the decision
+    setDecisionHistory((prev) => [...prev, choice.label]);
 
     const updatedLoan = choice.apply(loan);
     setLoan(updatedLoan);
@@ -398,8 +669,9 @@ function LoanSimulation({
     if (typeof choice.nextScenarioId === "number") {
       setScenarioId(choice.nextScenarioId);
     } else {
-      //no next scenario defined, mark as finished
+      //no next scenario defined, mark as finished and show summary
       setScenarioId(-1);
+      setShowSummary(true);
     }
   }
 
@@ -408,9 +680,11 @@ function LoanSimulation({
     setScenarioId(0);
     setExplanation(null);
     setPreviousLoan(null);
+    setShowSummary(false);
+    setDecisionHistory([]);
   }
 
-  // helper to render change arrows/colour
+  //helper to render change arrows/colour
   function renderChange(before: number, after: number, isRate = false) {
     if (after > before) {
       return (
@@ -472,7 +746,7 @@ function LoanSimulation({
           interest over time.
         </p>
 
-        {/* Progress bar (adapted from W3Schools progress bar example) */}
+        {/*Progress bar (adapted from W3Schools progress bar example)*/}
         <div
           style={{
             margin: "20px auto 10px auto",
@@ -502,7 +776,7 @@ function LoanSimulation({
           )}
         </div>
 
-        {/* Loan summary card */}
+        {/*Loan summary card*/}
         <div
           style={{
             backgroundColor: "#ffffff",
@@ -537,7 +811,7 @@ function LoanSimulation({
           )}
         </div>
 
-        {/* Before vs After comparison for the last decision */}
+        {/*Before vs After*/}
         {previousLoan && (
           <div
             style={{
@@ -677,6 +951,14 @@ function LoanSimulation({
                 Back to Calculator
               </button>
             </div>
+
+            {showSummary && (
+              <FinalSummary
+                finalLoan={loan}
+                decisions={decisionHistory}
+                onClose={() => setShowSummary(false)}
+              />
+            )}
           </div>
         )}
 
@@ -767,7 +1049,7 @@ export default function CarFinanceSimulatorPage() {
         <div className="container" style={{ marginTop: "80px" }}> {/*Added margin so it doesn’t overlap */}
 
           <h1>Car Finance Simulator</h1>
-          {/* Instruction line for users */}
+          {/*Instruction line for users*/}
           <p style={{ marginBottom: "20px", opacity: 0.8 }}>
             Enter your car details below to simulate your loan repayments and costs.
           </p>
@@ -1096,3 +1378,8 @@ function Td({ children }: { children: React.ReactNode }) {
 //https://www.w3schools.com/howto/howto_css_animate_buttons.asp
 //https://www.w3schools.com/howto/howto_css_ripple_buttons.asp
 //https://www.w3schools.com/howto/howto_css_button_group.asp
+
+//Final summary modal layout (overlay, centred content and card-style stats) adapted from W3Schools:
+//"How To - CSS Modals" and "How To - CSS Cards" (accessed Nov 2025):
+//https://www.w3schools.com/howto/howto_css_modals.asp
+//https://www.w3schools.com/howto/howto_css_cards.asp
