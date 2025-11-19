@@ -29,7 +29,7 @@ type Result = {
   rows: Row[];  //repayment schedule rows (first 12 months)
 };
 
-//Simulation-specific types
+//Simulation specific types
 type LoanState = {
   financeType: FinanceType;
   principal: number;            // amount financed (remaining) – simplified aggregate
@@ -155,11 +155,13 @@ function calculate(inputs: Inputs): Result {
 }
 
 //Simulation logic functions
-//Recalculate monthly payment and interest from a LoanState.
+//Recalculates monthly payment and interest
 //This is used whenever a scenario choice changes the loan details.
 function recalcLoanFromState(loan: LoanState): LoanState {
-  const monthlyRate = loan.annualRate / 12;
+  const monthlyRate = loan.annualRate / 12;   
 
+  //Works out new monthly repayment
+  //Uses either standard loan PMT or PCP with balloon PMT based on finance type
   const pmt =
     loan.financeType === "loan"
       ? pmtLoan(loan.principal, monthlyRate, loan.termMonthsRemaining)
@@ -168,11 +170,11 @@ function recalcLoanFromState(loan: LoanState): LoanState {
   const totalRepaid =
     pmt * loan.termMonthsRemaining +
     (loan.financeType === "pcp" ? loan.balloon : 0);
-
+  //everything repaid - amount still owed = total interest
   const totalInterest = round2(totalRepaid - loan.principal);
 
   return {
-    ...loan,
+    ...loan,  //everything unchanges stays the same
     monthlyPayment: round2(pmt),
     totalInterestOnFinance: totalInterest,
   };
@@ -195,6 +197,7 @@ function createInitialLoanState(inputs: Inputs, result: Result): LoanState {
 }
 
 //Scenarios
+//Each choice updates the LoanState based on user decisions
 const loanScenarios: ScenarioNode[] = [
   {
     id: 0,
@@ -428,14 +431,14 @@ const loanScenarios: ScenarioNode[] = [
   },
 ];
 
-//Child component: responsible only for rendering the current scenario and choices.
+//Child component: responsible only for rendering only one scenario at a time
 //Pattern inspired by "Story" component in GeeksforGeeks text adventure.
 //Layout and card styling adapted from W3Schools "How to - cards"
 function LoanScenarioView({
   scenario,
-  onChoose,
+  onChoose, //when the choice is made, calls back to parent with the selected choice
 }: {
-  scenario: ScenarioNode;
+  scenario: ScenarioNode; //shows current scenario
   onChoose: (choice: ScenarioChoice) => void;
 }) {
   return (
@@ -998,7 +1001,7 @@ function LoanSimulation({
 
 //react component for the car finance simulator page
 export default function CarFinanceSimulatorPage() {
-  // mode switching: calculator vs simulator
+  //mode switching: calculator vs simulator
   const [mode, setMode] = useState<"setup" | "simulate">("setup");
   const [simLoan, setSimLoan] = useState<LoanState | null>(null);
 
